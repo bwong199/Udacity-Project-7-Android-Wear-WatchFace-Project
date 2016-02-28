@@ -1,11 +1,19 @@
 package com.androidweardocs.wearabledatamap;
 
+import android.content.Context;
+import android.location.Address;
+import android.location.Criteria;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -19,18 +27,23 @@ import com.google.android.gms.wearable.Wearable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
 
 public class DataMapActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     GoogleApiClient googleClient;
     String weatherMain;
@@ -41,6 +54,33 @@ public class DataMapActivity extends AppCompatActivity implements
 
     String temp_min;
     String temp_max;
+
+    LocationManager locationManager;
+    String provider;
+
+    private Date dNow;
+    private SimpleDateFormat ft;
+    DateFormat timeFormat;
+
+    TextView latTV;
+    TextView lngTV;
+    TextView accuracyTV;
+    TextView speedTV;
+    TextView bearingTV;
+    TextView altitudeTV;
+    TextView addressTV;
+    TextView forecastTV;
+    TextView minTempTV;
+    TextView maxTempTV;
+
+    Double lat;
+    Double lng;
+    Double alt;
+    Float bearing;
+    Float speed;
+    Float accuracy;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,24 +94,55 @@ public class DataMapActivity extends AppCompatActivity implements
                 .addOnConnectionFailedListener(this)
                 .build();
 
-        Timer timer = new Timer ();
-        TimerTask hourlyTask = new TimerTask () {
-            @Override
-            public void run () {
+        latTV = (TextView) findViewById(R.id.lat);
+        lngTV = (TextView) findViewById(R.id.lng);
+        accuracyTV = (TextView) findViewById(R.id.accuracy);
+        speedTV = (TextView) findViewById(R.id.speed);
+        bearingTV = (TextView) findViewById(R.id.bearing);
+        altitudeTV = (TextView) findViewById(R.id.altitude);
+        addressTV = (TextView) findViewById(R.id.address);
+
+        forecastTV = (TextView)findViewById(R.id.forecastTV);
+        minTempTV = (TextView)findViewById(R.id.minTempTV);
+        maxTempTV = (TextView)findViewById(R.id.maxTempTV);
+
+
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        provider = locationManager.getBestProvider(new Criteria(), false);
+
+
+        try {
+            Location location = locationManager.getLastKnownLocation(provider);
+
+            onLocationChanged(location);
+
+
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        Timer timer = new Timer();
+
+        timer.schedule(new TimerTask() {
+            public void run() {
                 try {
                     DownloadTask task = new DownloadTask();
-                    task.execute("http://api.openweathermap.org/data/2.5/weather?q=" + "Calgary" + ",cad&appid=3ca4cb682481154e17368d817de04cb4");
 
-                }catch (Exception e) {
+                    String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98";
+//                    task.execute("http://api.openweathermap.org/data/2.5/weather?q=" + "Calgary" + ",cad&appid=3ca4cb682481154e17368d817de04cb4");
+                    task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98");
+                    Log.i("URL", query);
+
+                } catch (Exception e) {
                     e.printStackTrace();
                     Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG);
                 }
+
             }
-        };
-
-// schedule the task to run starting now and then every hour...
-        timer.schedule (hourlyTask, 0l, 1000*60*60);
-
+        }, 0, 60 * 1000 * 60);
 
     }
 
@@ -109,10 +180,12 @@ public class DataMapActivity extends AppCompatActivity implements
 
     // Placeholders for required connection callbacks
     @Override
-    public void onConnectionSuspended(int cause) { }
+    public void onConnectionSuspended(int cause) {
+    }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) { }
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+    }
 
 
     @Override
@@ -136,6 +209,89 @@ public class DataMapActivity extends AppCompatActivity implements
 
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+        try {
+            lat = location.getLatitude();
+            lng = location.getLongitude();
+            alt = location.getAltitude();
+            bearing = location.getBearing();
+            speed = location.getSpeed();
+            accuracy = location.getAccuracy();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+
+
+        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+
+        try {
+            List<Address> listAddresses = geocoder.getFromLocation(lat, lng, 1);
+
+            if (listAddresses != null && listAddresses.size() > 0 ) {
+
+                Log.i("PlaceInfo", listAddresses.get(0).toString());
+
+                String addressHolder = "";
+
+                for (int i = 0; i <= listAddresses.get(0).getMaxAddressLineIndex(); i++) {
+
+                    addressHolder += listAddresses.get(0).getAddressLine(i) + "\n";
+
+                }
+
+                addressTV.setText("Address:\n" + addressHolder);
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        latTV.setText("Latitude: " + lat.toString());
+        lngTV.setText("Longitude: " + lng.toString());
+        altitudeTV.setText("Altitude: " + alt.toString() + "m");
+        bearingTV.setText("Bearing: " + bearing.toString());
+        speedTV.setText("Speed: " + speed.toString() + "m/s");
+        accuracyTV.setText("Accuracy: " + accuracy.toString() + "m");
+
+
+        Log.i("Latitude", String.valueOf(lat));
+        Log.i("Longitude", String.valueOf(lng));
+        Log.i("altitude", String.valueOf(alt));
+        Log.i("bearing", String.valueOf(bearing));
+        Log.i("speed", String.valueOf(speed));
+        Log.i("accuracy", String.valueOf(accuracy));
+
+
+    }
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+
+        locationManager.removeUpdates(this);
+    }
+
+
 
     class SendToDataLayerThread extends Thread {
         String path;
@@ -196,7 +352,6 @@ public class DataMapActivity extends AppCompatActivity implements
                 return result;
 
 
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -214,7 +369,8 @@ public class DataMapActivity extends AppCompatActivity implements
 
                 JSONObject jsonObject = new JSONObject(result);
 
-                String weatherInfo = jsonObject.getString("weather") + jsonObject.getString("main");;
+                String weatherInfo = jsonObject.getString("weather") + jsonObject.getString("main");
+                ;
 
                 Log.i("weatherinfo", weatherInfo);
 
@@ -222,13 +378,12 @@ public class DataMapActivity extends AppCompatActivity implements
                 double temp_maxDou;
 
 
+                temp_minDou = Double.parseDouble(jsonObject.getJSONObject("main").getString("temp_min")) - 273.15;
+                temp_maxDou = Double.parseDouble(jsonObject.getJSONObject("main").getString("temp_max")) - 273.15;
 
-                temp_minDou =  Double.parseDouble(jsonObject.getJSONObject("main").getString("temp_min"))  - 273.15;
-                temp_maxDou = Double.parseDouble(jsonObject.getJSONObject("main").getString("temp_max")) -273.15 ;
+                Integer tempMinInt = (int) temp_minDou;
 
-                Integer tempMinInt = (int)temp_minDou;
-
-                Integer tempMaxInt = (int)temp_maxDou;
+                Integer tempMaxInt = (int) temp_maxDou;
 
 
                 temp_min = String.valueOf(tempMinInt);
@@ -247,7 +402,7 @@ public class DataMapActivity extends AppCompatActivity implements
                     String description = "";
 
 
-                   weatherMain = jsonPart.getString("main");
+                    weatherMain = jsonPart.getString("main");
                     weatherDescription = jsonPart.getString("description");
                     weatherId = jsonPart.getString("id");
 
@@ -259,15 +414,16 @@ public class DataMapActivity extends AppCompatActivity implements
                     dataMap.putString("maxTemp", temp_max);
                     dataMap.putString("id", weatherId);
 
+                    forecastTV.setText("Forecast: " + weatherDescription);
+                    minTempTV.setText("Low: " + temp_min+ "°");
+                    maxTempTV.setText("High: " + temp_max+ "°");
+
                     new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
 
-                    if(main!= "" && description != ""){
+                    if (main != "" && description != "") {
                         message += main + ": " + description + "\r\n";
 
                     }
-
-
-
 
 
                 }
@@ -282,7 +438,6 @@ public class DataMapActivity extends AppCompatActivity implements
             } catch (Exception e) {
                 Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG);
             }
-
 
 
         }

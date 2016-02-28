@@ -15,12 +15,13 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DataMapActivity extends WearableActivity {
 
@@ -33,6 +34,8 @@ public class DataMapActivity extends WearableActivity {
     private String time;
     private Date dNow;
     private SimpleDateFormat ft;
+    DateFormat timeFormat;
+    Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,15 +61,100 @@ public class DataMapActivity extends WearableActivity {
         MessageReceiver messageReceiver = new MessageReceiver();
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, messageFilter);
 
-        dNow = new Date( );
-        ft =  new SimpleDateFormat ("E, MMM d, yyyy");
-        Log.i("DateToday", ft.format(dNow));
+//        dNow = new Date();
+//        ft = new SimpleDateFormat("E, MMM d, yyyy");
+//        Log.i("DateToday", ft.format(dNow));
+//
+//        GregorianCalendar gcalendar = new GregorianCalendar();
+//
+//        time = gcalendar.get(Calendar.HOUR) + ":" + gcalendar.get(Calendar.MINUTE) + ":" + gcalendar.get(Calendar.SECOND);
+//
+//        Log.i("DateToday", time);
 
-        GregorianCalendar gcalendar = new GregorianCalendar();
+        timer = new Timer();
 
-        time = gcalendar.get(Calendar.HOUR) + ":" + gcalendar.get(Calendar.MINUTE) + ":" + gcalendar.get(Calendar.SECOND);
+        //update time and date every minute
+        timer.schedule(new TimerTask() {
+            public void run() {
+                // do your work
 
-        Log.i("DateToday", time);
+                updateTime();
+
+            }
+        }, 0, 60 * 1000);
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        updateTime();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        updateTime();
+    }
+
+    private void updateTime(){
+        try {
+            dNow = new Date();
+            ft = new SimpleDateFormat("E, MMM d, yyyy");
+            Log.i("DateToday", ft.format(dNow));
+
+            timeFormat = new SimpleDateFormat("hh:mm");
+
+            Log.i("DateToday", timeFormat.format(dNow));
+
+
+            mTimeTV.setText(String.valueOf(timeFormat.format(dNow)));
+            mDateTV.setText(String.valueOf(ft.format(dNow)));
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateTime();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        updateTime();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        updateTime();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        updateTime();
+    }
+
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+        updateTime();
+    }
+
+    @Override
+    public void onUpdateAmbient() {
+        super.onUpdateAmbient();
+        updateTime();
+    }
+
+    @Override
+    public void onExitAmbient() {
+        super.onExitAmbient();
+        updateTime();
     }
 
     public class MessageReceiver extends BroadcastReceiver {
@@ -77,16 +165,12 @@ public class DataMapActivity extends WearableActivity {
 
             NumberFormat formatter = new DecimalFormat("#0.0");
 
-            String display = "Received from the data Layer\n" +
-//                    "Hole: " + data.getString("hole") + "\n" +
-//                    "Front: " + data.getString("front") + "\n" +
-//                    "Middle: "+ data.getString("middle") + "\n" +
-//                    "Back: " + data.getString("back") + "\n" +
-                    "WeatherMain: " + data.getString("weathermain") + "\n" +
-                    "WeatherDescription: " +  data.getString("weatherdescription") + "\n" +
-                    "Min Temp: " +  data.getString("minTemp") + "\n" +
-                    "Max Temp: " +  data.getString("maxTemp") + "\n" +
-                    "Weather Id: " + data.getString("id") ;
+//            String display = "Received from the data Layer\n" +
+//                    "WeatherMain: " + data.getString("weathermain") + "\n" +
+//                    "WeatherDescription: " +  data.getString("weatherdescription") + "\n" +
+//                    "Min Temp: " +  data.getString("minTemp") + "\n" +
+//                    "Max Temp: " +  data.getString("maxTemp") + "\n" +
+//                    "Weather Id: " + data.getString("id") ;
 
             int weatherImage = getArtResourceForWeatherCondition(Integer.parseInt(data.getString("id")));
 
@@ -94,13 +178,13 @@ public class DataMapActivity extends WearableActivity {
 
             Picasso.with(getApplicationContext()).load(weatherImage).into(mImageView);
 
-//            mTextView.setText(display);
 
-            mTimeTV.setText(String.valueOf(time));
-            mDateTV.setText(String.valueOf(ft.format(dNow))
-                    );
-            mMinTempTV.setText(data.getString("minTemp") + "°" );
-            mMaxTempTV.setText(data.getString("maxTemp") + "°");
+            mMinTempTV.setText("Low: " + data.getString("minTemp") + "°");
+            mMaxTempTV.setText("High: " +data.getString("maxTemp") + "°");
+
+
+            mTimeTV.setText(String.valueOf(timeFormat.format(dNow)));
+            mDateTV.setText(String.valueOf(ft.format(dNow)));
         }
     }
 
