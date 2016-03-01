@@ -4,5 +4,6 @@
     <string name="app_name">Ben Wong Geolocation Weather</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="my_digital_name">My Digital</string>
 
 </resources>

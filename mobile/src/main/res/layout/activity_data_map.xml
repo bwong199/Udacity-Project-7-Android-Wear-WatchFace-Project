@@ -16,15 +16,6 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hiker&apos;s Watch"
-        android:id="@+id/textView"
-        android:textSize="30sp"
-        android:textColor="#f3202020"
-        android:layout_alignParentTop="true" android:layout_centerHorizontal="true"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Latitude: 32.7"
         android:id="@+id/lat"
         android:textSize="20sp"
@@ -85,14 +76,18 @@
         android:textSize="20sp"
         android:textColor="#151515"
         android:gravity="center_horizontal"
-        android:layout_below="@+id/textView" android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"/>
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
               android:text="Forecast: Clear Sky" android:id="@+id/forecastTV" android:textSize="20sp"
               android:textColor="#151515"
-              android:layout_above="@+id/lng" android:layout_alignParentEnd="true"/>
+              android:layout_toRightOf="@id/lat"
+              android:layout_marginLeft="60dp"
+              android:layout_alignTop="@+id/lat"
+               android:layout_alignParentEnd="true"/>
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
               android:text="Min: Temperature" android:id="@+id/minTempTV" android:textSize="20sp"
               android:textColor="#151515"
+              android:layout_below="@+id/forecastTV"
               android:layout_above="@+id/accuracy" android:layout_alignStart="@+id/forecastTV"/>
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
               android:text="Max: Temperature" android:id="@+id/maxTempTV" android:textSize="20sp"

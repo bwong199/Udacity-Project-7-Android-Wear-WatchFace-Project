@@ -1,6 +1,8 @@
 package com.androidweardocs.wearabledatamap;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -9,6 +11,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -18,6 +21,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.PutDataMapRequest;
@@ -33,12 +37,12 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
 
 public class DataMapActivity extends AppCompatActivity implements
@@ -80,6 +84,10 @@ public class DataMapActivity extends AppCompatActivity implements
     Float speed;
     Float accuracy;
 
+    Location location;
+
+
+    PutDataMapRequest putDataMapReq;
 
 
     @Override
@@ -102,48 +110,65 @@ public class DataMapActivity extends AppCompatActivity implements
         altitudeTV = (TextView) findViewById(R.id.altitude);
         addressTV = (TextView) findViewById(R.id.address);
 
-        forecastTV = (TextView)findViewById(R.id.forecastTV);
-        minTempTV = (TextView)findViewById(R.id.minTempTV);
-        maxTempTV = (TextView)findViewById(R.id.maxTempTV);
+        forecastTV = (TextView) findViewById(R.id.forecastTV);
+        minTempTV = (TextView) findViewById(R.id.minTempTV);
+        maxTempTV = (TextView) findViewById(R.id.maxTempTV);
 
 
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0.0f, this);
 
         provider = locationManager.getBestProvider(new Criteria(), false);
 
 
-        try {
-            Location location = locationManager.getLastKnownLocation(provider);
+        location = locationManager.getLastKnownLocation(provider);
 
+        onLocationChanged(location);
+
+
+//        Timer timer = new Timer();
+//
+//        timer.schedule(new TimerTask() {
+//            public void run() {
+//
+//                onLocationChanged(location);
+//
+//                DownloadTask task = new DownloadTask();
+//
+//                String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98";
+////                    task.execute("http://api.openweathermap.org/data/2.5/weather?q=" + "Calgary" + ",cad&appid=3ca4cb682481154e17368d817de04cb4");
+//                task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98");
+//                Log.i("URL", query);
+//            }
+//        }, 0, 60 * 1000 * 60);
+
+    }
+
+    private void updateWeather() {
+        try {
             onLocationChanged(location);
 
+            DownloadTask task = new DownloadTask();
 
-
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-
-        Timer timer = new Timer();
-
-        timer.schedule(new TimerTask() {
-            public void run() {
-                try {
-                    DownloadTask task = new DownloadTask();
-
-                    String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98";
+            String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=44db6a862fba0b067b1930da0d769e98";
 //                    task.execute("http://api.openweathermap.org/data/2.5/weather?q=" + "Calgary" + ",cad&appid=3ca4cb682481154e17368d817de04cb4");
-                    task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat+"&lon=" + lng+"&appid=44db6a862fba0b067b1930da0d769e98");
-                    Log.i("URL", query);
+            task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=44db6a862fba0b067b1930da0d769e98");
+            Log.i("URL", query);
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG);
-                }
-
-            }
-        }, 0, 60 * 1000 * 60);
-
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "Could not find weather", Toast.LENGTH_LONG);
+        }
     }
 
     // Connect to the data layer when the Activity starts
@@ -167,6 +192,18 @@ public class DataMapActivity extends AppCompatActivity implements
 //        dataMap.putString("back", "270");
         //Requires a new thread to avoid blocking the UI
 
+
+        String message = "Hello wearable\n Via the data layer";
+        //Requires a new thread to avoid blocking the UI
+
+        googleClient.connect();
+
+        Log.i("myTag", "onConnected");
+
+
+
+
+
     }
 
     // Disconnect from the data layer when the Activity stops
@@ -181,11 +218,17 @@ public class DataMapActivity extends AppCompatActivity implements
     // Placeholders for required connection callbacks
     @Override
     public void onConnectionSuspended(int cause) {
+        Log.i("myTag", "on Connection Suspended");
+
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+
+        Log.i("myTag", "on Connection Failed");
     }
+
+
 
 
     @Override
@@ -203,8 +246,11 @@ public class DataMapActivity extends AppCompatActivity implements
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.refresh) {
+
+            updateWeather();
             return true;
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -213,25 +259,26 @@ public class DataMapActivity extends AppCompatActivity implements
     @Override
     public void onLocationChanged(Location location) {
 
-        try {
+        if (location != null) {
             lat = location.getLatitude();
             lng = location.getLongitude();
             alt = location.getAltitude();
             bearing = location.getBearing();
             speed = location.getSpeed();
             accuracy = location.getAccuracy();
-        } catch (Exception e){
-            e.printStackTrace();
-        }
 
 
+            Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
 
-        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
 
-        try {
-            List<Address> listAddresses = geocoder.getFromLocation(lat, lng, 1);
+            List<Address> listAddresses = null;
+            try {
+                listAddresses = geocoder.getFromLocation(lat, lng, 1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            if (listAddresses != null && listAddresses.size() > 0 ) {
+            if (listAddresses != null && listAddresses.size() > 0) {
 
                 Log.i("PlaceInfo", listAddresses.get(0).toString());
 
@@ -247,27 +294,31 @@ public class DataMapActivity extends AppCompatActivity implements
 
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            NumberFormat formatter = new DecimalFormat("#0.00");
+            lat = Double.valueOf(formatter.format(lat));
+            lng = Double.valueOf(formatter.format(lng));
+
+            latTV.setText("Latitude: " + lat.toString());
+            lngTV.setText("Longitude: " + lng.toString());
+            altitudeTV.setText("Altitude: " + alt.toString() + "m");
+            bearingTV.setText("Bearing: " + bearing.toString());
+            speedTV.setText("Speed: " + speed.toString() + "m/s");
+            accuracyTV.setText("Accuracy: " + accuracy.toString() + "m");
+
+
+            Log.i("Latitude", String.valueOf(lat));
+            Log.i("Longitude", String.valueOf(lng));
+            Log.i("altitude", String.valueOf(alt));
+            Log.i("bearing", String.valueOf(bearing));
+            Log.i("speed", String.valueOf(speed));
+            Log.i("accuracy", String.valueOf(accuracy));
+        } else {
+            Toast.makeText(getApplicationContext(), "Location cannot be found", Toast.LENGTH_LONG).show();
         }
-
-        latTV.setText("Latitude: " + lat.toString());
-        lngTV.setText("Longitude: " + lng.toString());
-        altitudeTV.setText("Altitude: " + alt.toString() + "m");
-        bearingTV.setText("Bearing: " + bearing.toString());
-        speedTV.setText("Speed: " + speed.toString() + "m/s");
-        accuracyTV.setText("Accuracy: " + accuracy.toString() + "m");
-
-
-        Log.i("Latitude", String.valueOf(lat));
-        Log.i("Longitude", String.valueOf(lng));
-        Log.i("altitude", String.valueOf(alt));
-        Log.i("bearing", String.valueOf(bearing));
-        Log.i("speed", String.valueOf(speed));
-        Log.i("accuracy", String.valueOf(accuracy));
 
 
     }
+
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
 
@@ -288,9 +339,18 @@ public class DataMapActivity extends AppCompatActivity implements
         super.onPause();
 
 
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         locationManager.removeUpdates(this);
     }
-
 
 
     class SendToDataLayerThread extends Thread {
@@ -418,7 +478,37 @@ public class DataMapActivity extends AppCompatActivity implements
                     minTempTV.setText("Low: " + temp_min+ "°");
                     maxTempTV.setText("High: " + temp_max+ "°");
 
-                    new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+                    //send data via DataLayer
+//                    new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+
+                    //Using Put DataMap Request
+                    putDataMapReq = PutDataMapRequest.create("/data");
+                    Log.i("weatherDescription", weatherDescription);
+                    putDataMapReq.getDataMap().putString("weatherDescription", weatherDescription);
+
+                    putDataMapReq.getDataMap().putLong("current_time", System.currentTimeMillis());
+
+
+
+                    PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();
+                    Wearable.DataApi.putDataItem(googleClient, putDataReq);
+
+                    Wearable.DataApi.putDataItem(googleClient, putDataReq)
+                            .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                                @Override
+                                public void onResult(DataApi.DataItemResult dataItemResult) {
+                                    Log.d("myTag", "putDataItem status: "
+                                            + dataItemResult.getStatus().toString());
+                                }
+                            });
+
+//                    putDataMapReq = PutDataMapRequest.create("/data").setUrgent();
+//                    PendingResult<DataApi.DataItemResult> pendingResult =
+//                            Wearable.DataApi.putDataItem(googleClient, putDataReq);
+
+
+
+
 
                     if (main != "" && description != "") {
                         message += main + ": " + description + "\r\n";
