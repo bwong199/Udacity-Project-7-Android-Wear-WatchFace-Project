@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.benwong.androidwatchface"
+<manifest package="com.androidweardocs.wearabledatamap"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch"/>
@@ -16,7 +16,7 @@
         android:theme="@android:style/Theme.DeviceDefault">
 
         <service
-            android:name="com.benwong.com.androidweardocs.androidwatchface.WeatherWatchFaceService"
+            android:name="com.androidweardocs.wearabledatamap.WeatherWatchFaceService"
             android:label="@string/my_digital_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data

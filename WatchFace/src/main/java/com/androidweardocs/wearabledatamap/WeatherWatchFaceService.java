@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.benwong.androidwatchface;
+package com.androidweardocs.wearabledatamap;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -375,7 +375,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
             Wearable.DataApi.addListener(mGoogleApiClient, this).setResultCallback(new ResultCallback<Status>() {
                 @Override
                 public void onResult(Status status) {
-                    Log.i("myTag", String.valueOf(status));
+                    Log.i("myTag Wearable", String.valueOf(status));
                 }
             });
         }
@@ -392,7 +392,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
-            Log.i("myTag", "in on Data Changed");
+            Log.i("myTag Wearable", "in on Data Changed");
             for (DataEvent event : dataEventBuffer){
                 if(event.getType() == DataEvent.TYPE_CHANGED){
                     DataItem item = event.getDataItem();
@@ -402,12 +402,12 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
                         dataMap.getString("weatherDescription");
 
-                        Log.i("myTag", dataMap.getString("weatherDescription"));
+                        Log.i("myTag Wearable", dataMap.getString("weatherDescription"));
 
 
-                        Log.v("myTag", "DataMap received on watchFace: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
+                        Log.v("myTag Wearable", "DataMap received on watchFace: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
 
-                        Log.i("myTag", dataMap.getString("current_time"));
+                        Log.i("myTag Wearable", dataMap.getString("current_time"));
                     }
                 }
             }

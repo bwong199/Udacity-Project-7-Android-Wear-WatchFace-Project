@@ -486,7 +486,7 @@ public class DataMapActivity extends AppCompatActivity implements
                     Log.i("weatherDescription", weatherDescription);
                     putDataMapReq.getDataMap().putString("weatherDescription", weatherDescription);
 
-                    putDataMapReq.getDataMap().putLong("current_time", System.currentTimeMillis());
+                    putDataMapReq.getDataMap().putLong("current_time", Long.parseLong(Long.toString(System.currentTimeMillis())));
 
 
 
@@ -497,7 +497,7 @@ public class DataMapActivity extends AppCompatActivity implements
                             .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                                 @Override
                                 public void onResult(DataApi.DataItemResult dataItemResult) {
-                                    Log.d("myTag", "putDataItem status: "
+                                    Log.d("myTag Mobile", "putDataItem status: "
                                             + dataItemResult.getStatus().toString());
                                 }
                             });

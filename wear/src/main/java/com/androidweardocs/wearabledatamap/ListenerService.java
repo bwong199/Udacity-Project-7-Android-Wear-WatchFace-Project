@@ -2,7 +2,6 @@ package com.androidweardocs.wearabledatamap;
 
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
@@ -23,7 +22,7 @@ public class ListenerService extends WearableListenerService{
 
         DataMap dataMap;
         for (DataEvent event : dataEvents) {
-            Log.v("myTag", "DataMap received on watch: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
+//            Log.v("myTag", "DataMap received on watch: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
             // Check the data type
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 // Check the data path
