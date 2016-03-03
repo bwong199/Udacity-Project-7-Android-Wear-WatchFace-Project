@@ -405,6 +405,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
                         Log.i("myTag", dataMap.getString("weatherDescription"));
 
 
+                        Log.v("myTag", "DataMap received on watchFace: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
 
                         Log.i("myTag", dataMap.getString("current_time"));
                     }
