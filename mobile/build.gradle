@@ -24,6 +24,6 @@ dependencies {
 
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.google.android.gms:play-services:8.4.0'
-
+    wearApp project(':WatchFace')
     compile 'com.google.android.gms:play-services-wearable:8.4.0'
 }

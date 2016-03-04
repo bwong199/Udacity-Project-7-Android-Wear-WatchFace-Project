@@ -196,15 +196,7 @@ public class DataMapActivity extends AppCompatActivity implements
         String message = "Hello wearable\n Via the data layer";
         //Requires a new thread to avoid blocking the UI
 
-        googleClient.connect();
-
-        Log.i("myTag", "onConnected");
-
-
-
-
-
-    }
+        }
 
     // Disconnect from the data layer when the Activity stops
     @Override
@@ -227,8 +219,6 @@ public class DataMapActivity extends AppCompatActivity implements
 
         Log.i("myTag", "on Connection Failed");
     }
-
-
 
 
     @Override
@@ -475,8 +465,8 @@ public class DataMapActivity extends AppCompatActivity implements
                     dataMap.putString("id", weatherId);
 
                     forecastTV.setText("Forecast: " + weatherDescription);
-                    minTempTV.setText("Low: " + temp_min+ "°");
-                    maxTempTV.setText("High: " + temp_max+ "°");
+                    minTempTV.setText("Low: " + temp_min + "°");
+                    maxTempTV.setText("High: " + temp_max + "°");
 
                     //send data via DataLayer
 //                    new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
@@ -487,7 +477,6 @@ public class DataMapActivity extends AppCompatActivity implements
                     putDataMapReq.getDataMap().putString("weatherDescription", weatherDescription);
 
                     putDataMapReq.getDataMap().putLong("current_time", Long.parseLong(Long.toString(System.currentTimeMillis())));
-
 
 
                     PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();
@@ -505,9 +494,6 @@ public class DataMapActivity extends AppCompatActivity implements
 //                    putDataMapReq = PutDataMapRequest.create("/data").setUrgent();
 //                    PendingResult<DataApi.DataItemResult> pendingResult =
 //                            Wearable.DataApi.putDataItem(googleClient, putDataReq);
-
-
-
 
 
                     if (main != "" && description != "") {
