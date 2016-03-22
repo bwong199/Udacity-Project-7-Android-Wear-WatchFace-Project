@@ -126,7 +126,16 @@ public class DataMapActivity extends AppCompatActivity implements
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0.0f, this);
+
+
+        // check to see if location is turned on
+        boolean enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if(enabled){
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0.0f, this);
+        }else {
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1, 0.0f, this);
+        }
 
         provider = locationManager.getBestProvider(new Criteria(), false);
 
@@ -160,9 +169,9 @@ public class DataMapActivity extends AppCompatActivity implements
 
             DownloadTask task = new DownloadTask();
 
-            String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=44db6a862fba0b067b1930da0d769e98";
+            String query = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=3ca4cb682481154e17368d817de04cb4";
 //                    task.execute("http://api.openweathermap.org/data/2.5/weather?q=" + "Calgary" + ",cad&appid=3ca4cb682481154e17368d817de04cb4");
-            task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=44db6a862fba0b067b1930da0d769e98");
+            task.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lng + "&appid=3ca4cb682481154e17368d817de04cb4");
             Log.i("URL", query);
 
         } catch (Exception e) {
@@ -420,6 +429,7 @@ public class DataMapActivity extends AppCompatActivity implements
                 JSONObject jsonObject = new JSONObject(result);
 
                 String weatherInfo = jsonObject.getString("weather") + jsonObject.getString("main");
+                System.out.println(weatherInfo);
                 ;
 
                 Log.i("weatherinfo", weatherInfo);
@@ -455,6 +465,7 @@ public class DataMapActivity extends AppCompatActivity implements
                     weatherMain = jsonPart.getString("main");
                     weatherDescription = jsonPart.getString("description");
                     weatherId = jsonPart.getString("id");
+                    System.out.println(weatherMain + " " + weatherDescription + " " );
 
                     Log.i("weatherId", weatherId);
 
@@ -477,7 +488,12 @@ public class DataMapActivity extends AppCompatActivity implements
                     putDataMapReq.getDataMap().putString("weatherDescription", weatherDescription);
 
                     putDataMapReq.getDataMap().putLong("current_time", Long.parseLong(Long.toString(System.currentTimeMillis())));
+                    putDataMapReq.getDataMap().putString("id", weatherId);
+                    putDataMapReq.getDataMap().putString("weathermain", weatherMain);
+                    putDataMapReq.getDataMap().putString("minTemp", temp_min);
+                    putDataMapReq.getDataMap().putString("maxTemp", temp_max);
 
+                    putDataMapReq.getDataMap().putString("current_time", Long.toString(System.currentTimeMillis()));
 
                     PutDataRequest putDataReq = putDataMapReq.asPutDataRequest().setUrgent();
                     Wearable.DataApi.putDataItem(googleClient, putDataReq);

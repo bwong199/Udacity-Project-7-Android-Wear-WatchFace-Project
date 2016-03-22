@@ -21,9 +21,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -32,6 +35,7 @@ import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.util.Base64;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
@@ -46,8 +50,6 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
@@ -62,7 +64,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
-    GoogleApiClient mGoogleApiClient;
+
     Bundle data;
 
     private static final Typeface NORMAL_TYPEFACE =
@@ -106,6 +108,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
 
     private class Engine extends CanvasWatchFaceService.Engine implements  GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener {
+        GoogleApiClient mGoogleApiClient;
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
@@ -122,12 +125,18 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
         int mTapCount;
 
         float mXOffset;
+
         float mYOffset;
 
         float mXOffset2;
         float mYOffset2;
+        String minTemp;
+        String maxTemp;
+        String bothTemp;
+        String weatherID;
 
         DataMap dataMap;
+        Point screenPts;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -148,7 +157,10 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
                     .build());
             Resources resources = WeatherWatchFaceService.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
+
+            mXOffset2 = resources.getDimension(R.dimen.digital_x_offset2);
             mYOffset2 = resources.getDimension(R.dimen.digital_y_offset2);;
+
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background));
@@ -157,6 +169,8 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
             mTime = new Time();
+            bothTemp = "";
+            weatherID = "";
 
             mGoogleApiClient = new GoogleApiClient.Builder(WeatherWatchFaceService.this)
                     .addApi(Wearable.API)
@@ -200,18 +214,6 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
             }
 
-
-
-            if (visible) {
-                mGoogleApiClient.connect();
-            } else {
-                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-                    Wearable.NodeApi.removeListener(mGoogleApiClient, (NodeApi.NodeListener) this);
-                    Wearable.MessageApi.removeListener(mGoogleApiClient, (MessageApi.MessageListener) this);
-                    Wearable.DataApi.removeListener(mGoogleApiClient, (DataApi.DataListener) this);
-                    mGoogleApiClient.disconnect();
-                }
-            }
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
@@ -257,6 +259,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
 
             mTextPaint.setTextSize(textSize);
+
         }
 
         @Override
@@ -313,6 +316,8 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
+            screenPts = new Point();
+
             Log.i("HelloWatchFaceService", "I am drawing.");
             // Draw the background.
             if (isInAmbientMode()) {
@@ -331,11 +336,33 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
                 canvas.drawText(dataMap.getString("weatherDescription"), mXOffset, mYOffset2, mTextPaint);
             }
 
-
-//            Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.icon);
+            if(!(weatherID.equals(""))) {
+                int imageIcon = getArtResourceForWeatherCondition(Integer.parseInt(weatherID));
 //
-//            canvas.drawBitmap(icon, mXOffset, mYOffset2, null);
+//                System.out.println("weather icon " + imageIcon);
+
+                byte[] imageAsBytes = Base64.decode(String.valueOf(imageIcon), Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
+
+
+                Bitmap icon = BitmapFactory.decodeResource(getResources(),
+                        imageIcon);
+
+//                System.out.println("weather icon " + bmp);
+
+
+                canvas.drawBitmap(icon, screenPts.x + 200, screenPts.y + 90 , null);
+            }
+
+
+//            getArtResourceForWeatherCondition(Integer.parseInt(dataMap.getString("id")));
+
+
+        if(!(bothTemp.equals(""))){
+            canvas.drawText(bothTemp, mXOffset2, mYOffset2, mTextPaint);
         }
+
+         }
 
         /**
          * Starts the {@link #mUpdateTimeHandler} timer if it should be running and isn't currently
@@ -375,7 +402,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
             Wearable.DataApi.addListener(mGoogleApiClient, this).setResultCallback(new ResultCallback<Status>() {
                 @Override
                 public void onResult(Status status) {
-                    Log.i("myTag Wearable", String.valueOf(status));
+                    Log.i("myTag Watchface", String.valueOf(status));
                 }
             });
         }
@@ -392,7 +419,7 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onDataChanged(DataEventBuffer dataEventBuffer) {
-            Log.i("myTag Wearable", "in on Data Changed");
+            Log.i("myTag Watchface", "in on Data Changed");
             for (DataEvent event : dataEventBuffer){
                 if(event.getType() == DataEvent.TYPE_CHANGED){
                     DataItem item = event.getDataItem();
@@ -402,15 +429,26 @@ public class WeatherWatchFaceService extends CanvasWatchFaceService {
 
                         dataMap.getString("weatherDescription");
 
-                        Log.i("myTag Wearable", dataMap.getString("weatherDescription"));
+                        Log.i("myTag Watchface", dataMap.getString("weatherDescription"));
 
+                        Log.v("myTag Watchface", "DataMap received on watchFace: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
 
-                        Log.v("myTag Wearable", "DataMap received on watchFace: " + DataMapItem.fromDataItem(event.getDataItem()).getDataMap());
+                        Log.i("myTag Watchface", dataMap.getString("current_time"));
 
-                        Log.i("myTag Wearable", dataMap.getString("current_time"));
+                        System.out.println("finally receiving watchFace, current condition" + dataMap.getString("weatherDescription"));
+
+                        minTemp = dataMap.getString("minTemp") + "°";
+                        maxTemp = dataMap.getString("maxTemp") + "°";
+                        bothTemp = minTemp + " " + maxTemp;
+
+                        weatherID = dataMap.getString("id");
+                        System.out.println("both temp " + bothTemp);
+                        invalidate();
                     }
                 }
             }
+
+
         }
 
 //        private final DataApi.DataListener onDataChangedListener = new DataApi.DataListener() {
